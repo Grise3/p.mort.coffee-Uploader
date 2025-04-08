@@ -69,6 +69,12 @@ curl --version
 
 ---
 
+## 📸 Preview
+
+![preview](https://github.com/Grise3/p.mort.coffee-Uploader/blob/main/p.mort.coffee.app.png?raw=true)
+
+---
+
 ## 💡 Notes
 
 - Max file size is **100 MB** (as enforced by the service).
