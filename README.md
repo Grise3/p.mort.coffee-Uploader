@@ -1,3 +1,4 @@
+![icon](https://github.com/Grise3/p.mort.coffee-Uploader/blob/main/p.mort.coffee.png?raw=true) 
 # ☕ p.mort.coffee Uploader
 
 A small **Python + Qt (PySide6)** desktop app to easily upload files to [https://p.mort.coffee](https://p.mort.coffee) using `curl`.
