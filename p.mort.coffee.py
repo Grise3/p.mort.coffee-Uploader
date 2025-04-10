@@ -2,14 +2,13 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
-    QFileDialog, QTextEdit, QHBoxLayout, QMessageBox
+    QFileDialog, QTextEdit, QHBoxLayout, QMessageBox, QDialog, QDialogButtonBox
 )
 from PySide6.QtGui import QFont, QIcon
 import subprocess
 import pyperclip
 import os
 import shlex
-
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -20,9 +19,16 @@ class MainWindow(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
+        self.button_layout = QHBoxLayout()
         self.upload_button = QPushButton("Upload File")
         self.upload_button.clicked.connect(self.upload_file)
-        self.layout.addWidget(self.upload_button)
+        self.button_layout.addWidget(self.upload_button)
+
+        self.upload_text_button = QPushButton("Upload Text")
+        self.upload_text_button.clicked.connect(self.open_text_upload_dialog)
+        self.button_layout.addWidget(self.upload_text_button)
+
+        self.layout.addLayout(self.button_layout)
 
         self.progress_label = QLabel("Upload Progress:")
         self.layout.addWidget(self.progress_label)
@@ -61,9 +67,88 @@ class MainWindow(QWidget):
         if file_path:
             self.handle_upload(file_path)
 
+    def open_text_upload_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Text Editor")
+        dialog.resize(400, 300)
+
+        layout = QVBoxLayout(dialog)
+
+        text_edit = QTextEdit()
+        layout.addWidget(text_edit)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(button_box)
+
+        button_box.accepted.connect(lambda: self.upload_text_content(text_edit.toPlainText(), dialog))
+        button_box.rejected.connect(dialog.reject)
+
+        dialog.exec()
+
+    def upload_text_content(self, text, dialog, insecure=False):
+        dialog.accept()
+
+        if not text.strip():
+            self.output_text.setText("The text is empty. Upload canceled.")
+            self.progress_label.setText("Upload Canceled.")
+            return
+
+        try:
+            curl_command = ['curl']
+            if insecure:
+                curl_command.append('--insecure')
+            curl_command += ['--upload-file', '-', 'https://p.mort.coffee']
+
+            process = subprocess.Popen(
+                curl_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = process.communicate(input=text.encode('utf-8'))
+
+            output = stdout.decode('utf-8').strip()
+            error_output = stderr.decode('utf-8')
+
+            if process.returncode != 0:
+                if "SSL certificate problem" in error_output:
+                    user_response = QMessageBox.warning(
+                        self,
+                        "SSL Certificate Problem",
+                        "curl: (60) SSL certificate problem: certificate has expired\nDo you want to continue anyway?",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No
+                    )
+                    if user_response == QMessageBox.Yes:
+                        self.upload_text_content(text, dialog, insecure=True)
+                        return
+                self.output_text.setText(f"Upload error: {error_output}")
+                self.progress_label.setText("Upload Failed!")
+                return
+
+            if any(err in output for err in ["413", "Request Entity Too Large"]):
+                self.output_text.setText("Error 413: File too large.")
+                self.progress_label.setText("Upload Failed!")
+            elif any(err in output for err in ["404", "Not Found"]):
+                self.output_text.setText("Error 404: URL not found.")
+                self.progress_label.setText("Upload Failed!")
+            elif any(err in output for err in ["502", "Bad Gateway"]):
+                self.output_text.setText("Error 502: Bad Gateway.")
+                self.progress_label.setText("Upload Failed!")
+            else:
+                self.output_text.setText(f"Upload completed. Link: {output}")
+                self.link_label.setText(output)
+                self.copy_link_button.setEnabled(True)
+                self.progress_label.setText("Upload Complete!")
+                self.start_countdown()
+
+        except Exception as e:
+            self.output_text.setText(f"Error: {e}")
+            self.progress_label.setText("Upload Failed!")
+
     def handle_upload(self, file_path, insecure=False):
         if not os.path.exists(file_path):
-            self.output_text.setText("Error: Invalid file path provided.")
+            self.output_text.setText("Error: Invalid file path.")
             self.progress_label.setText("Upload Failed!")
             return
 
@@ -71,7 +156,7 @@ class MainWindow(QWidget):
         max_size = 100 * 1024 * 1024
 
         if file_size > max_size:
-            self.output_text.setText("Error: File size exceeds the 100 MB limit.")
+            self.output_text.setText("Error: File exceeds 100 MB limit.")
             self.progress_label.setText("Upload Failed!")
             return
 
@@ -90,7 +175,7 @@ class MainWindow(QWidget):
                 self.output_text.setText("Error 502: Bad Gateway.")
                 self.progress_label.setText("Upload Failed!")
             else:
-                self.output_text.setText(f"Upload complete. The link is {output.strip()}")
+                self.output_text.setText(f"Upload completed. Link: {output.strip()}")
                 self.link_label.setText(output.strip())
                 self.copy_link_button.setEnabled(True)
                 self.progress_label.setText("Upload Complete!")
@@ -137,7 +222,7 @@ if __name__ == "__main__":
     try:
         app.setWindowIcon(QIcon("p.mort.coffee.png"))
     except Exception as e:
-        print(f"[ERROR] unable to load the window icon : {e}")
+        print(f"[ERROR] Unable to load window icon: {e}")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
