@@ -77,6 +77,7 @@ curl --version
 ## 📸 Preview
 
 ![preview](https://github.com/Grise3/p.mort.coffee-Uploader/blob/main/p.mort.coffee.app.png?raw=true)
+![text editor](https://github.com/Grise3/p.mort.coffee-Uploader/blob/main/p.mort.coffee.text.editor.png?raw=true)
 
 ---
 
