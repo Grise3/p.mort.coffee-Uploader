@@ -6,6 +6,7 @@ A small **Python + Qt (PySide6)** desktop app to easily upload files to [https:/
 ## 📦 Features
 
 - One-click file upload with a graphical interface.
+- Upload raw text via an integrated **text editor**.
 - Automatically checks file size (limit: **100 MB**).
 - Displays the upload link after completion.
 - Button to **copy the link** to clipboard.
@@ -23,7 +24,10 @@ A small **Python + Qt (PySide6)** desktop app to easily upload files to [https:/
 python main.py
 ```
 
-Click **"Upload File"** and select a file.
+Click:
+
+- "**Upload File**" to choose a file.
+- "**Upload Text**" to write and upload custom text content.
 
 ---
 
@@ -65,7 +69,7 @@ curl --version
 ## 🔧 How It Works
 
 - The app uses Python's `subprocess` to call `curl`.
-- Files are uploaded to `https://p.mort.coffee`.
+- Files or text are uploaded to `https://p.mort.coffee`.
 - Handles expired SSL certificate warnings and lets the user continue if they choose to.
 
 ---
@@ -80,6 +84,7 @@ curl --version
 
 - Max file size is **100 MB** (as enforced by the service).
 - After uploading, a **countdown starts (40 seconds)** and the window auto-closes.
+- The **text editor** is useful for quick notes, code snippets, or simple messages.
 
 ## 🛡️ Disclaimer
 
